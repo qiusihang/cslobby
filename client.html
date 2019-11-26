@@ -8,7 +8,7 @@
     <meta content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0" name="viewport" />
 </head>
 
-<body style="background:#d6d6d6">
+<body>
 
     <div id="container">
         <div id="history-container">
@@ -16,8 +16,9 @@
             </table>
         </div>
         <div id="message-container">
-            <textarea id="message" onkeypress="onKeyPress(event)" placeholder="Type your message"></textarea>
+            <textarea id="message" onkeydown="onKeyDown(event)" placeholder="Type your message here"></textarea>
         </div>
+        <div id="send-button" onclick="click_send()">SEND</div>
     </div>
 
     <script src="./client.js"></script>

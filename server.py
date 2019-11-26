@@ -1,8 +1,10 @@
 import sys
 sys.path.append("py")
+from datetime import datetime
 from websocket_server_local import WebsocketServer
 
-channels = {}
+channels = {} # users in each channel
+history = {} # conversation history in each channel
 
 def new_client(client, server):
     result = "Client(%d) has joined the lobby." % client['id']
@@ -20,22 +22,41 @@ def message_back(client, server, message):
     nickname = message[1:message.index(')')].split('&')[0] # get nickname from message
     channel = message[1:message.index(')')].split('&')[1] # get channel from message
     message = message[message.index(')')+1:]  # get real message from message
+    time = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     client['nickname'] = nickname
     if channel in channels.keys():
         if client not in channels[channel]:
-            channels[channel].append(client)
             broadcast(channel, "%s has joined the conversation %s." % (nickname, channel))
+            server.send_message(client, recent_history(channel)) # send conversational history to new user
+            channels[channel].append(client)
             return
     else:
         channels[channel] = [client]
         broadcast(channel, "%s has joined the conversation %s." % (nickname, channel))
         return
-    result = "%s: %s" % (nickname, message)
+    result = "%s:%s: %s" % (nickname, time, message)
     broadcast(channel, result, [client])
-    server.send_message(client, "__you__: %s" % (message))
+    server.send_message(client, "__you__:%s: %s" % (time, message))
 
-def broadcast(channel, message, excl = []):
+def recent_history(channel, recent = 50): # get recent conversational history (default: 50 dialogues)
+    res = ""
+    if len(history[channel]) > recent:
+        for i in range(-recent,0):
+            res += "#$%^&" + history[channel][i]
+    else:
+        for h in history[channel]:
+            res += "#$%^&" + h
+    return res
+
+def add_to_history(channel, message):
+    if channel not in history.keys():
+        history[channel] = [message]
+    else:
+        history[channel].append(message)
+
+def broadcast(channel, message, excl = []): # broadcast to channel with message excluding users in the list-excl
     log(message)
+    add_to_history(channel, message)
     for c in channels[channel]:
         if c in excl: continue
         server.send_message(c, message)
